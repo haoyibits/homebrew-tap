@@ -5,6 +5,14 @@ class Tracebridge < Formula
   version "0.1.0"
   license "MIT"
 
+  bottle do
+    root_url "https://github.com/haoyibits/tracebridge/releases/download/v0.1.0"
+    sha256 cellar: :any_skip_relocation, arm64_sonoma: "62f87ef29422ed59564ed6676d3bc1e6b2c0c2f89bd39b1103ad514cddffd2fa"
+    sha256 cellar: :any_skip_relocation, sonoma: "04bfd0d040e658636b77db6afa15827280ba6d3184cf5d57c235f01f10ae32e0"
+    sha256 cellar: :any_skip_relocation, arm64_linux: "19cd8749e749debeae3fa6f56c6398f6826b1442b607ba0aafd58393aa7fcf28"
+    sha256 cellar: :any_skip_relocation, x86_64_linux: "3a7e0e8c0ae8fd35d68521cef819b6a2b40baad32b22adb0ca2c49bffa1df2cd"
+  end
+
   on_macos do
     on_arm do
       url "https://github.com/haoyibits/tracebridge/releases/download/v0.1.0/tracebridge-aarch64-apple-darwin.tar.gz"
