@@ -1,0 +1,41 @@
+name: Update formulae
+
+on:
+  schedule:
+    - cron: "17 * * * *"
+  workflow_dispatch:
+  repository_dispatch:
+    types: [tracebridge-release]
+
+permissions:
+  contents: write
+
+jobs:
+  tracebridge:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Regenerate Formula/tracebridge.rb from the latest release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPO: haoyibits/tracebridge
+        run: |
+          if ! tag=$(gh release view --repo "$REPO" --json tagName --jq .tagName 2>/dev/null); then
+            echo "no tracebridge release yet"
+            exit 0
+          fi
+          version="${tag#v}"
+          if grep -q "version \"$version\"" Formula/tracebridge.rb 2>/dev/null; then
+            echo "Formula/tracebridge.rb is already at $version"
+            exit 0
+          fi
+          mkdir -p dist Formula
+          gh release download "$tag" --repo "$REPO" --pattern '*.sha256' --dir dist
+          curl -fsSL "https://raw.githubusercontent.com/$REPO/$tag/packaging/homebrew/formula.sh" -o formula.sh
+          sh formula.sh "$version" dist "$REPO" > Formula/tracebridge.rb
+          ruby -c Formula/tracebridge.rb
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Formula/tracebridge.rb
+          git commit -m "tracebridge $version"
+          git push
