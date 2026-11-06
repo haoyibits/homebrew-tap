@@ -24,8 +24,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - runner: macos-14          # arm64_sonoma, also used on newer macOS
-          - runner: macos-15-intel    # sequoia (Intel)
+          # arm64_sequoia, also used on newer macOS. No Intel bottle: Intel
+          # macOS is Homebrew Tier 3 and its dependencies have no bottles.
+          - runner: macos-15
           - runner: ubuntu-24.04      # x86_64_linux
           - runner: ubuntu-24.04-arm  # arm64_linux
     runs-on: ${{ matrix.runner }}
