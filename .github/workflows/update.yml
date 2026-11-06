@@ -18,7 +18,7 @@ jobs:
       - name: Regenerate Formula/tracebridge.rb and Formula/rvdbg.rb from the latest release
         env:
           GH_TOKEN: ${{ github.token }}
-          REPO: haoyibits/tracebridge
+          REPO: haoyibits/rustvisor-debug
         run: |
           if ! tag=$(gh release view --repo "$REPO" --json tagName --jq .tagName 2>/dev/null); then
             echo "no tracebridge release yet"

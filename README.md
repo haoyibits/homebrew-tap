@@ -1,6 +1,6 @@
 # haoyibits/homebrew-tap
 
-Homebrew formulae for [tracebridge and rvdbg](https://github.com/haoyibits/tracebridge)
+Homebrew formulae for [tracebridge and rvdbg](https://github.com/haoyibits/rustvisor-debug)
 and a patched OpenOCD for ST Stellar.
 
 ```sh
