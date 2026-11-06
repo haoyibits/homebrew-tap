@@ -1,0 +1,117 @@
+name: Bottle openocd-stellar
+
+# Run by hand after bumping Formula/openocd-stellar.rb (tag, version, sha256).
+# Builds a bottle per platform, attaches them to the release
+# openocd-stellar-<version> of this repository and commits the bottle block.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: bottle-openocd-stellar
+  cancel-in-progress: false
+
+env:
+  FORMULA: haoyibits/tap/openocd-stellar
+  HOMEBREW_NO_AUTO_UPDATE: "1"
+  HOMEBREW_NO_INSTALL_CLEANUP: "1"
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - runner: macos-14          # arm64_sonoma, also used on newer macOS
+          - runner: macos-15-intel    # sequoia (Intel)
+          - runner: ubuntu-24.04      # x86_64_linux
+          - runner: ubuntu-24.04-arm  # arm64_linux
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - name: Set up Homebrew and this tap
+        uses: Homebrew/actions/setup-homebrew@main
+
+      - name: Version
+        id: version
+        run: |
+          version=$(brew info --json=v2 "$FORMULA" | jq -r '.formulae[0].versions.stable')
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+
+      - name: Build
+        run: brew install --build-bottle --verbose "$FORMULA"
+
+      - name: Test
+        run: brew test --verbose "$FORMULA"
+
+      - name: Bottle
+        env:
+          ROOT_URL: https://github.com/${{ github.repository }}/releases/download/openocd-stellar-${{ steps.version.outputs.version }}
+        run: |
+          mkdir -p bottles
+          cd bottles
+          brew bottle --json --root-url="$ROOT_URL" "$FORMULA"
+          # Homebrew downloads "<name>-<version>.<tag>.bottle.tar.gz" from a
+          # non-GitHub-Packages root_url, but writes the file with "--".
+          for json in *.bottle.json; do
+            jq -r '.[].bottle.tags[] | "\(.local_filename) \(.filename)"' "$json" |
+              while read -r local remote; do mv "$local" "$remote"; done
+          done
+          ls -l
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: bottle-${{ matrix.runner }}
+          path: bottles/*
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Set up Homebrew and this tap
+        uses: Homebrew/actions/setup-homebrew@main
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: bottles
+          merge-multiple: true
+
+      - name: Attach bottles to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(brew info --json=v2 "$FORMULA" | jq -r '.formulae[0].versions.stable')
+          tag="openocd-stellar-$version"
+          echo "tag=$tag" >> "$GITHUB_ENV"
+          if ! gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create "$tag" --repo "$GITHUB_REPOSITORY" \
+              --title "openocd-stellar $version" \
+              --notes "Homebrew bottles for openocd-stellar $version (built from haoyibits/OpenOCD v$version)."
+          fi
+          gh release upload "$tag" bottles/*.bottle.tar.gz --repo "$GITHUB_REPOSITORY" --clobber
+
+      - uses: actions/checkout@v4
+        with:
+          path: tap-src
+
+      - name: Write the bottle block
+        run: |
+          brew bottle --merge --write --no-commit bottles/*.bottle.json
+          cp "$(brew --repository haoyibits/tap)/Formula/openocd-stellar.rb" tap-src/Formula/openocd-stellar.rb
+          git -C tap-src diff -- Formula/openocd-stellar.rb
+
+      - name: Commit
+        working-directory: tap-src
+        run: |
+          if git diff --quiet -- Formula/openocd-stellar.rb; then
+            echo "bottle block unchanged"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add Formula/openocd-stellar.rb
+          git commit -m "openocd-stellar: add bottles for ${tag#openocd-stellar-}"
+          git pull --rebase origin main
+          git push origin HEAD:main
