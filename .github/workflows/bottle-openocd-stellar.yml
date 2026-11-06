@@ -52,7 +52,7 @@ jobs:
         run: |
           mkdir -p bottles
           cd bottles
-          brew bottle --json --root-url="$ROOT_URL" "$FORMULA"
+          brew bottle --json --no-rebuild --root-url="$ROOT_URL" "$FORMULA"
           # Homebrew downloads "<name>-<version>.<tag>.bottle.tar.gz" from a
           # non-GitHub-Packages root_url, but writes the file with "--".
           for json in *.bottle.json; do
@@ -91,7 +91,7 @@ jobs:
               --title "openocd-stellar $version" \
               --notes "Homebrew bottles for openocd-stellar $version (built from haoyibits/OpenOCD v$version)."
           fi
-          gh release upload "$tag" bottles/*.bottle.tar.gz --repo "$GITHUB_REPOSITORY" --clobber
+          gh release upload "$tag" bottles/*.tar.gz --repo "$GITHUB_REPOSITORY" --clobber
 
       - uses: actions/checkout@v4
         with:
