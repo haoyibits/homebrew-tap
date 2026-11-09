@@ -6,6 +6,13 @@ class OpenocdStellar < Formula
   sha256 "cd1157007d7e034cb59af922d3b80908982c67eaa7506d1ecfb05588f6cad362"
   license "GPL-2.0-or-later"
 
+  bottle do
+    root_url "https://github.com/haoyibits/homebrew-tap/releases/download/openocd-stellar-0.12.0-stellar.3"
+    sha256 arm64_sequoia: "dd1ba7199dd45f00d13d8648eebe3b591dc9fa16938a9176ae79d7f103160d97"
+    sha256 arm64_linux:   "27322791bbb0b06d3dcc9994503f314f5bb2019e90cd78428fd88e58c9345876"
+    sha256 x86_64_linux:  "f0f643f6bb941c52edac3acce4147bc9bb67068466acc63b19394c0370d354b3"
+  end
+
   depends_on "autoconf" => :build
   depends_on "automake" => :build
   depends_on "libtool" => :build
